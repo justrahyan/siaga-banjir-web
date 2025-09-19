@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aplikasi Sensor & Panduan</title>
+    <!-- Tailwind v4 CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: "#118DFF",
+              text: "#262626",
+            },
+            fontFamily: {
+              quicksand: ["Quicksand", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="./favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./favicon_io/favicon-16x16.png">
+  <link rel="manifest" href="./favicon_io/site.webmanifest">
+  </head>
+  <body class="bg-gray-50 text-text font-quicksand">
+    <!-- Header -->
+    <header class="bg-primary text-white p-4 shadow-md">
+      <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold">Panduan Siaga Banjir</h1>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-4xl mx-auto p-6">
+      <!-- Form Panduan -->
+      <section>
+        <h2 class="text-xl font-semibold text-primary mb-4">Tambah Panduan</h2>
+        <form id="panduanForm" class="bg-white shadow rounded-2xl p-6 space-y-4">
+          <!-- Judul -->
+          <div>
+            <label class="block mb-1 font-medium" for="judul">Judul</label>
+            <input
+              id="judul"
+              type="text"
+              placeholder="Masukkan judul panduan"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <!-- Isi -->
+          <div>
+            <label class="block mb-1 font-medium" for="isi">Isi Panduan</label>
+            <textarea
+              id="isi"
+              rows="4"
+              placeholder="Tulis isi panduan..."
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+            ></textarea>
+          </div>
+
+          <!-- Kategori -->
+          <div>
+            <label class="block mb-1 font-medium" for="kategori">Kategori</label>
+            <select
+              id="kategori"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+            >
+              <option value="">-- Pilih Kategori --</option>
+              <option value="sebelum">Sebelum Banjir</option>
+              <option value="saat">Saat Banjir</option>
+              <option value="setelah">Setelah Banjir</option>
+            </select>
+          </div>
+
+          <!-- URL Gambar -->
+          <div>
+            <label class="block mb-1 font-medium" for="gambarUrl">URL Gambar</label>
+            <input
+              id="gambarUrl"
+              type="text"
+              placeholder="Masukkan URL gambar (opsional)"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <!-- Tombol -->
+          <button
+            type="submit"
+            class="w-full bg-primary text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition"
+          >
+            Simpan Panduan
+          </button>
+        </form>
+      </section>
+
+      <!-- List Panduan -->
+      <section class="mt-10">
+        <h2 class="text-xl font-semibold text-primary mb-4">Daftar Panduan</h2>
+        <div id="panduanList" class="grid gap-6 md:grid-cols-2"></div>
+      </section>
+
+      <!-- Modal Detail/Edit -->
+      <div
+        id="modal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      >
+        <div class="bg-white rounded-2xl shadow-lg max-w-lg w-full p-6 relative h-[450px] overflow-y-scroll">
+          <button
+            id="closeModal"
+            class="absolute top-3 right-3 text-gray-500 hover:text-red-500"
+          >
+            ✖
+          </button>
+          <div id="modalContent"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white p-4 mt-10">
+      <div class="max-w-6xl mx-auto text-center">
+        <p>© 2025 Sensor & Panduan - Kelompok 5</p>
+      </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        onSnapshot,
+        query,
+        orderBy,
+        deleteDoc,
+        doc,
+        updateDoc,
+        getDoc,
+      } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyA0GO49xIdpaeGt5wGR-Vu2UFRnFbMVsEo",
+        authDomain: "siaga-banjir-b73a8.firebaseapp.com",
+        projectId: "siaga-banjir-b73a8",
+        storageBucket: "siaga-banjir-b73a8.firebasestorage.app",
+        messagingSenderId: "787166487096",
+        appId: "1:787166487096:web:6d45f4b947cc727d5d3ccd",
+        measurementId: "G-SLRSBPBM0Z"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      // Handle form submit
+      const form = document.getElementById("panduanForm");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = document.getElementById("judul").value;
+        const content = document.getElementById("isi").value;
+        const kategori = document.getElementById("kategori").value;
+        const gambarUrl = document.getElementById("gambarUrl").value;
+
+        try {
+          await addDoc(collection(db, "panduan"), {
+            title,
+            content,
+            kategori,
+            gambarUrl,
+            tanggal: new Date(),
+          });
+          alert("✅ Panduan berhasil disimpan!");
+          form.reset();
+        } catch (error) {
+          console.error("❌ Gagal menyimpan panduan:", error);
+          alert("Gagal menyimpan panduan!");
+        }
+      });
+
+      // Modal helper
+      const modal = document.getElementById("modal");
+      const modalContent = document.getElementById("modalContent");
+      document.getElementById("closeModal").addEventListener("click", () => {
+        modal.classList.add("hidden");
+      });
+
+      function openModal(html) {
+        modalContent.innerHTML = html;
+        modal.classList.remove("hidden");
+      }
+
+      // Realtime listener untuk daftar panduan
+      const panduanList = document.getElementById("panduanList");
+      const q = query(collection(db, "panduan"), orderBy("tanggal", "desc"));
+
+      onSnapshot(q, (snapshot) => {
+        panduanList.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const id = docSnap.id;
+          panduanList.innerHTML += `
+            <div class="bg-white shadow rounded-2xl overflow-hidden flex flex-col">
+              ${data.gambarUrl ? `<img src="${data.gambarUrl}" alt="Gambar panduan" class="w-full h-40 object-cover">` : ""}
+              <div class="p-4 flex-1 flex flex-col">
+                <h3 class="text-lg font-bold text-primary mb-1">${data.title}</h3>
+                <p class="text-xs text-gray-500 mb-2">Kategori: ${data.kategori}</p>
+                <p class="text-gray-700 text-sm mb-3 line-clamp-3">${data.content}</p>
+                <p class="text-xs text-gray-500 mb-3">🗓 ${new Date(data.tanggal.seconds * 1000).toLocaleString()}</p>
+                <div class="mt-auto flex gap-2">
+                  <button onclick="lihatDetail('${id}')" class="flex-1 bg-blue-500 text-white py-1 rounded-lg hover:bg-blue-600">Detail</button>
+                  <button onclick="editPanduan('${id}')" class="flex-1 bg-yellow-500 text-white py-1 rounded-lg hover:bg-yellow-600">Edit</button>
+                  <button onclick="hapusPanduan('${id}')" class="flex-1 bg-red-500 text-white py-1 rounded-lg hover:bg-red-600">Hapus</button>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      });
+
+      // Global function
+      window.lihatDetail = async (id) => {
+        const snap = await getDoc(doc(db, "panduan", id));
+        const data = snap.data();
+        openModal(`
+          <h2 class="text-xl font-bold text-primary mb-3">${data.title}</h2>
+          <p class="text-sm text-gray-500 mb-2">Kategori: ${data.kategori}</p>
+          ${data.gambarUrl ? `<img src="${data.gambarUrl}" class="w-full h-60 object-cover rounded-lg mb-4">` : ""}
+          <p class="text-gray-700 mb-4">${data.content}</p>
+          <p class="text-xs text-gray-500">🗓 ${new Date(data.tanggal.seconds * 1000).toLocaleString()}</p>
+        `);
+      };
+
+      window.editPanduan = async (id) => {
+        const snap = await getDoc(doc(db, "panduan", id));
+        const data = snap.data();
+        openModal(`
+          <h2 class="text-xl font-bold text-yellow-600 mb-4">Edit Panduan</h2>
+          <form id="editForm" class="space-y-4">
+            <input type="text" id="editJudul" value="${data.title}" class="w-full px-3 py-2 border rounded-lg">
+            <textarea id="editIsi" rows="4" class="w-full px-3 py-2 border rounded-lg">${data.content}</textarea>
+            <select id="editKategori" class="w-full px-3 py-2 border rounded-lg">
+              <option value="sebelum" ${data.kategori === "sebelum" ? "selected" : ""}>Sebelum Banjir</option>
+              <option value="saat" ${data.kategori === "saat" ? "selected" : ""}>Saat Banjir</option>
+              <option value="setelah" ${data.kategori === "setelah" ? "selected" : ""}>Setelah Banjir</option>
+            </select>
+            <input type="text" id="editGambar" value="${data.gambarUrl}" class="w-full px-3 py-2 border rounded-lg" placeholder="URL Gambar">
+            <button type="submit" class="w-full bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600">Update</button>
+          </form>
+        `);
+
+        document.getElementById("editForm").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          await updateDoc(doc(db, "panduan", id), {
+            title: document.getElementById("editJudul").value,
+            content: document.getElementById("editIsi").value,
+            kategori: document.getElementById("editKategori").value,
+            gambarUrl: document.getElementById("editGambar").value,
+          });
+          alert("✅ Panduan berhasil diupdate!");
+          modal.classList.add("hidden");
+        });
+      };
+
+      window.hapusPanduan = async (id) => {
+        if (confirm("Yakin mau hapus panduan ini?")) {
+          await deleteDoc(doc(db, "panduan", id));
+          alert("🗑 Panduan berhasil dihapus!");
+        }
+      };
+    </script>
+  </body>
+</html>
